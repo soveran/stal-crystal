@@ -32,7 +32,7 @@ in this document will work.
 require "stal"
 
 # Connect the client to the default host
-resp = Resp.new("localhost", 6379)
+resp = Resp.new("redis://localhost:6379")
 
 # Use the Redis client to populate some sets
 resp.call("SADD", "foo", "a", "b", "c")

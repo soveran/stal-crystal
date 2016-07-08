@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 before do
-  Resp.new("localhost", 6379).tap do |c|
+  Resp.new("redis://localhost:6379").tap do |c|
     c.call("FLUSHDB")
     c.call("SADD", "foo", "a", "b", "c")
     c.call("SADD", "bar", "b", "c", "d")
@@ -12,7 +12,7 @@ end
 
 describe "Stal" do
   it "should solve set algebra" do
-    c = Resp.new("localhost", 6379)
+    c = Resp.new("redis://localhost:6379")
 
     # Example expression
     expr = ["SUNION", "qux", ["SDIFF", ["SINTER", "foo", "bar"], "baz"]]
