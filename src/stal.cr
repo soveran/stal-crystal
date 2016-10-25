@@ -111,6 +111,6 @@ module Stal
   end
 
   private def self.reply(result)
-    result as Array(Resp::Reply)
+    result.as Array(Resp::Reply)
   end
 end
