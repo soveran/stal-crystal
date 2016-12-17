@@ -19,98 +19,31 @@
 # THE SOFTWARE.
 #
 require "resp"
+require "json"
 
 module Stal
-  class InvalidCommand < Exception
+  macro with_file(filename, command)
+    {% dir = system("dirname", __FILE__).strip %}
+    {{ system(command, dir + "/" + filename).stringify }}
   end
 
-  COMMANDS = {
-    "SDIFF"  => "SDIFFSTORE",
-    "SINTER" => "SINTERSTORE",
-    "SUNION" => "SUNIONSTORE",
+  LUA = {
+    src: with_file("stal/stal.lua", "cat"),
+    sha: with_file("stal/stal.lua", "shasum").split(' ').first,
   }
-
-  def self.command(term)
-    COMMANDS.fetch(term) do
-      raise InvalidCommand.new(term.to_s)
-    end
-  end
-
-  # Compile expression into Redis commands
-  def self.compile(expr : Array, ids, ops)
-    result = Array(String).new
-
-    expr.each do |item|
-      result << convert(item, ids, ops)
-    end
-
-    result
-  end
-
-  # Identity function for item.
-  def self.convert(item : String, ids, ops)
-    item
-  end
-
-  # Transform :SDIFF, :SINTER and :SUNION commands
-  # into SDIFFSTORE, SINTERSTORE and SUNIONSTORE.
-  def self.convert(expr : Array, ids, ops)
-    head = expr[0]
-    tail = expr[1, expr.size]
-
-    # Key where partial results will be stored
-    id = sprintf("stal:%s", ids.size)
-
-    # Keep a reference to clean it up later
-    ids.push(id)
-
-    # Translate into command and destination key
-    op = [command(head), id]
-
-    # Compile the rest recursively
-    op.concat(compile(tail, ids, ops))
-
-    # Append the outermost operation
-    ops.push(op)
-
-    return id
-  end
-
-  def self.process(expr : Array)
-    ids = Array(String).new
-    ops = Array(Array(String)).new
-
-    ops.push(compile(expr, ids, ops))
-
-    return {ops, ids}
-  end
-
-  # Return commands without any wrapping added by `solve`
-  def self.explain(expr : Array)
-    process(expr).first
-  end
 
   # Evaluate expression `expr` in the Redis client `c`.
   def self.solve(c, expr : Array)
-    ops, ids = process(expr)
-
-    if ops.size == 1
-      c.call(ops[0])
-    else
-      c.queue("MULTI")
-
-      ops.each do |op|
-        c.queue(op)
+    begin
+      c.call("EVALSHA", LUA[:sha], "0", expr.to_json)
+    rescue ex : Exception
+      case ex.message
+      when /NOSCRIPT/
+        c.call("SCRIPT", "LOAD", LUA[:src])
+        c.call("EVALSHA", LUA[:sha], "0", expr.to_json)
+      else
+        raise ex
       end
-
-      c.queue(["DEL"].concat(ids))
-      c.queue("EXEC")
-
-      (reply(reply(c.commit).last))[-2]
     end
-  end
-
-  private def self.reply(result)
-    result.as Array(Resp::Reply)
   end
 end

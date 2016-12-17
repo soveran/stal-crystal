@@ -24,23 +24,7 @@ describe "Stal" do
 
     assert_equal ["b", "c"], sort(Stal.solve(c, expr))
 
-    # Only "SUNION", "SDIFF" and "SINTER" are supported in sub expressions
-    expr = ["SUNION", ["DEL", "foo"]]
-
-    assert_raise(Stal::InvalidCommand) do
-      Stal.solve(c, expr)
-    end
-
     # Verify there's no keyspace pollution
     assert_equal ["bar", "baz", "foo", "qux"], sort(c.call("KEYS", "*"))
-
-    expr = ["SCARD", ["SINTER", "foo", "bar"]]
-
-    # Explain returns an array of Redis commands
-    expected = [["SINTERSTORE", "stal:0", "foo", "bar"], ["SCARD", "stal:0"]]
-
-    assert_equal expected, Stal.explain(expr)
-
-    assert_equal 2, Stal.solve(c, expr)
   end
 end
