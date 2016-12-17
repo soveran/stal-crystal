@@ -55,28 +55,8 @@ Stal.solve(resp, expr)
 perform the underlying operations, and it takes care of generating
 and deleting any temporary keys.
 
-Note that the only valid names for the internal commands are
-`"SUNION"`, `"SDIFF"` and `"SINTER"`. Any other internal command will
-raise an error. The outmost command can be any set operation, for
-example:
-
-```crystal
-expr = ["SCARD", ["SINTER", "foo", "bar"]]
-
-Stal.solve(resp, expr)
-#=> 2
-```
-
-If you want to preview the commands `Stal` will send to generate
-the results, you can use `Stal.explain`:
-
-```crystal
-Stal.explain(["SINTER", ["SUNION", "foo", "bar"], "baz"])
-#  [["SUNIONSTORE", "stal:0", "foo", "bar"],
-#   ["SINTER", "stal:0", "baz"]]
-```
-
-All commands are pipelined and wrapped in a `MULTI/EXEC` transaction.
+For more information, refer to the repository of the [Stal][stal]
+script.
 
 ## Installation
 
