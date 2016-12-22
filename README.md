@@ -71,3 +71,4 @@ dependencies:
 
 [redis]: http://redis.io
 [resp]: https://github.com/soveran/resp-crystal
+[stal]: https://github.com/soveran/stal
