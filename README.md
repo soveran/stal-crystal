@@ -2,6 +2,8 @@
 
 Set algebra solver for Redis
 
+![CI](https://github.com/soveran/stal-crystal/workflows/Crystal%20CI/badge.svg)
+
 ## Description
 
 `Stal` receives an array with an s-expression composed of commands
